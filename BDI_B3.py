@@ -23,4 +23,5 @@ while r.status_code != 200:
         filename.write_bytes(r.content)
             
     n+=1
-    
+
+BDI = extract_text(filename)
