@@ -10,17 +10,22 @@ from pathlib import Path
 from datetime import date, timedelta
 import pandas as pd
 import numpy as np
-
+import tabula
 
 n=0
-while r.status_code != 200:
+BDI_DIA = (date.today()-timedelta(n)).strftime('%Y%m%d')
+url = 'https://up2dataweb.blob.core.windows.net/bdi/BDI_03-2_{}.pdf'.format(BDI_DIA)
+aux = requests.get(url,stream=True)
+while aux != 200:
     BDI_DIA = (date.today()-timedelta(n)).strftime('%Y%m%d')
-    url = 'https://up2dataweb.blob.core.windows.net/bdi/BDI_00_{}.pdf'.format(BDI_DIA)
+    url = 'https://up2dataweb.blob.core.windows.net/bdi/BDI_03-2_{}.pdf'.format(BDI_DIA)
     r = requests.get(url,stream=True)
-    aux = r.status_code
-    if aux == 200:
-        filename = Path(r'C:\Users\rodrigo.jove\Documents\PC_ET\Opere-com-derivativos\temp\BDI_DIA.pdf')
-        filename.write_bytes(r.content)
-            
+    aux = r.status_code            
     n+=1
-    
+if aux == 200:
+        filename = Path(r'temp\BDI_DIA.pdf')
+        filename.write_bytes(r.content)
+        
+dfs = tabula.read_pdf("temp\BDI_DIA.pdf", pages='all')
+
+dfs[0]
