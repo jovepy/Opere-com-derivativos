@@ -7,7 +7,7 @@ Created on Sat May 14 10:50:13 2022
 
 import requests
 from pathlib import Path
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import pandas as pd
 import numpy as np
 import tabula
@@ -40,12 +40,13 @@ for coluna in df:
     aux.columns = list(range(coluna,coluna+len(aux.columns)))
     df1 = pd.concat([df1,aux],axis=1)
     
-df1.to_excel('ver.xlsx')
+
 df1 = df1.set_index(0)
 
 tickers = []
 vencimentos = [] 
 for ticker in df1.index:
+        
     for i in df1.loc[ticker]:
         try:
             ano = date.today().strftime("%Y")
@@ -61,10 +62,11 @@ for ticker in df1.index:
 
 df_estruturado = pd.DataFrame()
 for ticker, vencimento in zip(tickers,vencimentos):
-    aux = (list(df1.loc[ticker].dropna()))[-11:] 
+    aux = (list(df1.loc[ticker].dropna()))[-11:]
     while ano in aux[0]:
         aux=aux[1:]
         aux[-1] = '-'
+        print(aux)
     aux = pd.DataFrame([ticker,vencimento]+aux).T
     df_estruturado = pd.concat([df_estruturado,aux],axis=0)
     
@@ -72,3 +74,51 @@ df_estruturado = df_estruturado[df_estruturado.columns[:-2]] #exclui-se as colun
 
     
 df_estruturado.columns = ['Código' ,'Vencimento' ,'Exercício','Abertura' ,'Mínimo','Máximo', 'Médio' ,'Fechamento', 'Oscilação (%)','Compra (R$)' ,'Venda (R$)']
+
+df_estruturado['Código_raíz'] = df_estruturado['Código'].str[:4]
+
+operacao = []
+for ticker in (df_estruturado['Código']):
+    for i in reversed(ticker):
+        try:
+            int(i)
+        except:
+            vencimento = i
+            
+            if i in ['A','B','C','D','E','F','G','H','I','J','K','L']:
+                operacao .append('call')
+                break
+            else:
+                operacao.append('put')
+                break
+df_estruturado['posição'] = operacao
+
+valores = []
+for v in df_estruturado['Oscilação (%)']:
+    n = ''
+    for i in v:
+        try:
+            int(i)
+            n+=i
+        except:
+            if i == ',':
+                n+='.'
+            else:
+                pass
+    try:
+        n = float(n)/100
+    except:
+        n = 0
+
+    valores.append(n)
+
+df_estruturado['Oscilação_Normal (%)'] = valores 
+
+dias_para_vencimento = []
+for data in df_estruturado['Vencimento']:
+    time_1 = datetime.strptime(date.today().strftime("%d/%m/%Y"),"%d/%m/%Y")
+    time_2 = datetime.strptime(data,"%d/%m/%Y")
+    time_interval = time_2 - time_1
+    dias_para_vencimento.append(time_interval.days)
+
+df_estruturado['Dias_para_vencimento'] = dias_para_vencimento
